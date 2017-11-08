@@ -57,12 +57,12 @@ void FindAverageValues(eprocess_type proc_type, double** matrix, const size_t nu
 	{
 		for (size_t i = 0; i < numb_rows; ++i)
 		{
-			double sum(0.0);
-			for (size_t j = 0; j < numb_cols; ++j)
+			cilk::reducer_opadd<double> sum(0.0);
+			cilk_for(size_t j = 0; j < numb_cols; ++j)
 			{
 				sum += matrix[i][j];
 			}
-			average_vals[i] = sum / numb_cols;
+			average_vals[i] = sum.get_value() / numb_cols;
 		}
 		break;
 	}
@@ -70,12 +70,12 @@ void FindAverageValues(eprocess_type proc_type, double** matrix, const size_t nu
 	{
 		for (size_t j = 0; j < numb_cols; ++j)
 		{
-			double sum(0.0);
-			for (size_t i = 0; i < numb_rows; ++i)
+			cilk::reducer_opadd<double> sum(0.0);
+			cilk_for(size_t i = 0; i < numb_rows; ++i)
 			{
 				sum += matrix[i][j];
 			}
-			average_vals[j] = sum / numb_rows;
+			average_vals[j] = sum.get_value() / numb_rows;
 		}
 		break;
 	}
@@ -133,8 +133,8 @@ int main()
 	{
 		srand((unsigned)time(0));
 
-		const size_t numb_rows = 2;
-		const size_t numb_cols = 3;
+		const size_t numb_rows = 200;
+		const size_t numb_cols = 300;
 
 		double** matrix = new double*[numb_rows];
 		for (size_t i = 0; i < numb_rows; ++i)
@@ -157,6 +157,14 @@ int main()
 
 		PrintAverageVals(eprocess_type::by_rows, average_vals_in_rows, numb_rows);
 		PrintAverageVals(eprocess_type::by_cols, average_vals_in_cols, numb_cols);
+
+		delete[] average_vals_in_rows;
+		delete[] average_vals_in_cols;
+		for (size_t i = 0; i < numb_rows; ++i)
+		{
+			delete[] matrix[i];
+		}
+		delete[] matrix;
 	}
 	catch (std::exception& except)
 	{
